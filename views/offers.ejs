@@ -1,0 +1,264 @@
+<%- include('base', { title: 'Offers - OfferEarner' }) %>
+
+<div class="offers-container">
+    <div class="offers-header">
+        <h1>Available Offers</h1>
+        <p>Complete offers to earn money. All payouts are made via PayPal.</p>
+    </div>
+    
+    <div class="offers-filters">
+        <div class="filter-group">
+            <label for="category-filter">Category:</label>
+            <select id="category-filter">
+                <option value="">All Categories</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="provider-filter">Provider:</label>
+            <select id="provider-filter">
+                <option value="">All Providers</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="sort-filter">Sort by:</label>
+            <select id="sort-filter">
+                <option value="payout">Highest Payout</option>
+                <option value="time">Quickest</option>
+                <option value="newest">Newest</option>
+            </select>
+        </div>
+    </div>
+    
+    <div id="offers-grid" class="offers-grid">
+        <div class="loading">Loading offers...</div>
+    </div>
+    
+    <div class="pagination" id="pagination" style="display: none;">
+        <button id="prev-page" class="btn btn-secondary">Previous</button>
+        <span id="page-info">Page 1 of 1</span>
+        <button id="next-page" class="btn btn-secondary">Next</button>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let currentFilters = {
+    category: '',
+    provider: '',
+    sort: 'payout'
+};
+
+// Load offers
+async function loadOffers(page = 1) {
+    try {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: '12',
+            ...currentFilters
+        });
+        
+        const response = await fetch(`/api/offers?${params}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to load offers');
+        }
+        
+        displayOffers(data.offers);
+        updatePagination(data.pagination);
+        
+    } catch (error) {
+        console.error('Error loading offers:', error);
+        document.getElementById('offers-grid').innerHTML = '<p class="error">Failed to load offers. Please try again.</p>';
+    }
+}
+
+// Display offers
+function displayOffers(offers) {
+    const grid = document.getElementById('offers-grid');
+    
+    if (offers.length === 0) {
+        grid.innerHTML = '<p class="empty-state">No offers available at the moment. Check back later!</p>';
+        return;
+    }
+    
+    grid.innerHTML = offers.map(offer => `
+        <div class="offer-card">
+            <div class="offer-header">
+                <h3>${offer.title}</h3>
+                <div class="offer-payout">$${offer.userPayout.toFixed(2)}</div>
+            </div>
+            
+            <div class="offer-content">
+                <p>${offer.description}</p>
+                
+                <div class="offer-meta">
+                    <span class="meta-item">
+                        <span class="meta-icon">⏱️</span>
+                        ${offer.timeEstimate || '5-10 mins'}
+                    </span>
+                    <span class="meta-item">
+                        <span class="meta-icon">📋</span>
+                        ${offer.category}
+                    </span>
+                    <span class="meta-item">
+                        <span class="meta-icon">🏢</span>
+                        ${offer.provider}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="offer-actions">
+                <button class="btn btn-primary start-offer-btn" data-offer-id="${offer.id}">
+                    Start Offer
+                </button>
+                <button class="btn btn-secondary view-details-btn" data-offer-id="${offer.id}">
+                    View Details
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add event listeners
+    document.querySelectorAll('.start-offer-btn').forEach(btn => {
+        btn.addEventListener('click', startOffer);
+    });
+    
+    document.querySelectorAll('.view-details-btn').forEach(btn => {
+        btn.addEventListener('click', viewOfferDetails);
+    });
+}
+
+// Start offer
+async function startOffer(e) {
+    const offerId = e.target.dataset.offerId;
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        alert('Please login to start offers.');
+        window.location.href = '/login';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/offers/${offerId}/start`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert('Offer started successfully! Complete the requirements to earn your reward.');
+            // You could redirect to the offer URL here
+        } else {
+            alert(result.error || 'Failed to start offer.');
+        }
+    } catch (error) {
+        alert('Failed to start offer. Please try again.');
+    }
+}
+
+// View offer details
+function viewOfferDetails(e) {
+    const offerId = e.target.dataset.offerId;
+    // For now, just show an alert. You could open a modal or navigate to a details page
+    alert('Offer details feature coming soon!');
+}
+
+// Update pagination
+function updatePagination(pagination) {
+    currentPage = pagination.page;
+    totalPages = pagination.pages;
+    
+    const paginationElement = document.getElementById('pagination');
+    const pageInfo = document.getElementById('page-info');
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    
+    if (totalPages > 1) {
+        paginationElement.style.display = 'flex';
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === totalPages;
+    } else {
+        paginationElement.style.display = 'none';
+    }
+}
+
+// Load filters
+async function loadFilters() {
+    try {
+        const [categoriesResponse, providersResponse] = await Promise.all([
+            fetch('/api/offers/categories'),
+            fetch('/api/offers/providers')
+        ]);
+        
+        const categories = await categoriesResponse.json();
+        const providers = await providersResponse.json();
+        
+        const categorySelect = document.getElementById('category-filter');
+        const providerSelect = document.getElementById('provider-filter');
+        
+        categories.categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+        
+        providers.providers.forEach(provider => {
+            const option = document.createElement('option');
+            option.value = provider;
+            option.textContent = provider;
+            providerSelect.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Error loading filters:', error);
+    }
+}
+
+// Filter change handlers
+document.getElementById('category-filter').addEventListener('change', function() {
+    currentFilters.category = this.value;
+    currentPage = 1;
+    loadOffers(currentPage);
+});
+
+document.getElementById('provider-filter').addEventListener('change', function() {
+    currentFilters.provider = this.value;
+    currentPage = 1;
+    loadOffers(currentPage);
+});
+
+document.getElementById('sort-filter').addEventListener('change', function() {
+    currentFilters.sort = this.value;
+    currentPage = 1;
+    loadOffers(currentPage);
+});
+
+// Pagination handlers
+document.getElementById('prev-page').addEventListener('click', function() {
+    if (currentPage > 1) {
+        loadOffers(currentPage - 1);
+    }
+});
+
+document.getElementById('next-page').addEventListener('click', function() {
+    if (currentPage < totalPages) {
+        loadOffers(currentPage + 1);
+    }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadFilters();
+    loadOffers();
+});
+</script>

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Login - OfferEarner{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2 style="text-align: center; margin-bottom: 2rem; color: var(--text-primary);">Welcome Back</h2>
+    
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        
+        <div class="form-group" style="margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; background-color: var(--primary-color); color: white;">
+                Login
+            </button>
+        </div>
+    </form>
+    
+    <div style="text-align: center; margin-top: 1rem;">
+        <p style="color: var(--text-secondary);">
+            Don't have an account? 
+            <a href="/register" style="color: var(--primary-color); text-decoration: none;">Register here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    try {
+        const response = await utils.apiCall('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({
+                email: formData.get('email'),
+                password: formData.get('password')
+            })
+        });
+        
+        // Store token and user info
+        auth.setToken(response.access_token);
+        auth.setUserInfo(response.user);
+        
+        utils.showNotification('Login successful!', 'success');
+        
+        // Redirect to dashboard after brief delay
+        setTimeout(() => {
+            window.location.href = '/dashboard';
+        }, 1500);
+        
+    } catch (error) {
+        // Error already handled by utils.apiCall
+    }
+});
+</script>
+{% endblock %}

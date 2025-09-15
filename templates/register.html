@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Register - OfferEarner{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2 style="text-align: center; margin-bottom: 2rem; color: var(--text-primary);">Create Your Account</h2>
+    
+    <form id="registerForm">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="paypal_email">PayPal Email (for payments)</label>
+            <input type="email" id="paypal_email" name="paypal_email" class="form-control" required>
+        </div>
+        
+        <div class="form-group" style="margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; background-color: var(--primary-color); color: white;">
+                Create Account
+            </button>
+        </div>
+    </form>
+    
+    <div style="text-align: center; margin-top: 1rem;">
+        <p style="color: var(--text-secondary);">
+            Already have an account? 
+            <a href="/login" style="color: var(--primary-color); text-decoration: none;">Login here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirm_password');
+    
+    if (password !== confirmPassword) {
+        utils.showNotification('Passwords do not match!', 'error');
+        return;
+    }
+    
+    if (password.length < 6) {
+        utils.showNotification('Password must be at least 6 characters long!', 'error');
+        return;
+    }
+    
+    try {
+        const response = await utils.apiCall('/api/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({
+                username: formData.get('username'),
+                email: formData.get('email'),
+                password: password,
+                paypal_email: formData.get('paypal_email')
+            })
+        });
+        
+        // Store token and user info
+        auth.setToken(response.access_token);
+        auth.setUserInfo(response.user);
+        
+        utils.showNotification('Account created successfully!', 'success');
+        
+        // Redirect to dashboard after brief delay
+        setTimeout(() => {
+            window.location.href = '/dashboard';
+        }, 1500);
+        
+    } catch (error) {
+        // Error already handled by utils.apiCall
+    }
+});
+</script>
+{% endblock %}

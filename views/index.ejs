@@ -1,0 +1,108 @@
+<%- include('base', { title: 'Home - OfferEarner' }) %>
+
+<div class="hero-section">
+    <div class="hero-content">
+        <h1>Welcome to OfferEarner</h1>
+        <p class="hero-subtitle">Complete offers, earn money, and get paid via PayPal!</p>
+        
+        <div class="hero-stats">
+            <div class="stat-item">
+                <span class="stat-number">$0.50 - $5.00</span>
+                <span class="stat-label">Per Offer</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">5 min</span>
+                <span class="stat-label">Average Time</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">$5</span>
+                <span class="stat-label">Minimum Payout</span>
+            </div>
+        </div>
+
+        <div class="hero-actions">
+            <% if (!locals.user) { %>
+                <a href="/register" class="btn btn-primary">Get Started</a>
+                <a href="/offers" class="btn btn-secondary">Browse Offers</a>
+            <% } else { %>
+                <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+                <a href="/offers" class="btn btn-secondary">View Offers</a>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<div class="features-section">
+    <h2>Why Choose OfferEarner?</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">💰</div>
+            <h3>High Paying Offers</h3>
+            <p>Earn $0.50 to $5.00 per offer with our carefully selected high-paying opportunities.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Quick & Easy</h3>
+            <p>Most offers take just 2-5 minutes to complete. No complicated requirements.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <h3>Multiple Categories</h3>
+            <p>Surveys, app downloads, sign-ups, and more. Find offers that match your interests.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💳</div>
+            <h3>PayPal Payouts</h3>
+            <p>Get paid directly to your PayPal account. Minimum payout is just $5.</p>
+        </div>
+    </div>
+</div>
+
+<div class="how-it-works">
+    <h2>How It Works</h2>
+    <div class="steps">
+        <div class="step">
+            <div class="step-number">1</div>
+            <h3>Sign Up</h3>
+            <p>Create your free account and verify your PayPal email address.</p>
+        </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <h3>Browse Offers</h3>
+            <p>Choose from hundreds of offers in various categories and difficulty levels.</p>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <h3>Complete Tasks</h3>
+            <p>Follow the instructions and complete the offer requirements.</p>
+        </div>
+        <div class="step">
+            <div class="step-number">4</div>
+            <h3>Get Paid</h3>
+            <p>Earnings are added to your balance. Request payout when you reach $5.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add any homepage-specific JavaScript here
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate stats on scroll
+    const stats = document.querySelectorAll('.stat-number');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    });
+
+    stats.forEach(stat => {
+        stat.style.opacity = '0';
+        stat.style.transform = 'translateY(20px)';
+        stat.style.transition = 'all 0.6s ease';
+        observer.observe(stat);
+    });
+});
+</script>

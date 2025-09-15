@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Available Offers - OfferEarner{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="color: var(--text-primary);">Available Offers</h1>
+        <select id="providerFilter" style="padding: 0.5rem; border-radius: 0.5rem; border: 2px solid var(--border-color); background-color: var(--bg-primary); color: var(--text-primary);">
+            <option value="all">All Providers</option>
+            <option value="lootably">Lootably</option>
+            <option value="adgem">AdGem</option>
+            <option value="adgatemedia">AdGateMedia</option>
+            <option value="cpalead">CPALead</option>
+        </select>
+    </div>
+    
+    <!-- Offer Cards -->
+    <div id="offersGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+        <div style="text-align: center; grid-column: 1 / -1; padding: 2rem;">
+            <p style="color: var(--text-secondary);">Loading offers...</p>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 3rem; padding: 2rem; background-color: var(--bg-secondary); border-radius: 1rem;">
+        <h3 style="color: var(--text-primary); margin-bottom: 1rem;">More Offers Coming Soon!</h3>
+        <p style="color: var(--text-secondary);">We're constantly adding new offers from our partners. Check back regularly for new earning opportunities!</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentOffers = [];
+
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadOffers();
+    setupProviderFilter();
+});
+
+async function loadOffers() {
+    try {
+        const offers = await utils.apiCall('/api/offers');
+        currentOffers = offers;
+        displayOffers(offers);
+    } catch (error) {
+        console.error('Failed to load offers:', error);
+        document.getElementById('offersGrid').innerHTML = `
+            <div style="text-align: center; grid-column: 1 / -1; padding: 2rem;">
+                <p style="color: var(--text-secondary);">Failed to load offers. Please try again later.</p>
+            </div>
+        `;
+    }
+}
+
+function displayOffers(offers) {
+    const grid = document.getElementById('offersGrid');
+    
+    if (offers.length === 0) {
+        grid.innerHTML = `
+            <div style="text-align: center; grid-column: 1 / -1; padding: 2rem;">
+                <p style="color: var(--text-secondary);">No offers available at the moment.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = offers.map(offer => `
+        <div class="feature-card offer-card" data-provider="${offer.provider}" data-offer-id="${offer.id}">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <h3 style="color: var(--text-primary);">${offer.title}</h3>
+                <span style="background-color: var(--success-color); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem;">
+                    ${utils.formatCurrency(offer.user_payout)}
+                </span>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">${offer.description}</p>
+            <div style="margin-bottom: 1rem;">
+                <span style="background-color: var(--border-color); color: var(--text-primary); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; margin-right: 0.5rem;">
+                    ${offer.category.toUpperCase()}
+                </span>
+                ${offer.time_estimate ? `
+                    <span style="background-color: var(--border-color); color: var(--text-primary); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                        ${offer.time_estimate}
+                    </span>
+                ` : ''}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: var(--text-secondary); font-size: 0.875rem; text-transform: capitalize;">
+                    Provider: ${offer.provider}
+                </span>
+                <button class="btn btn-primary offer-start-btn" data-offer-id="${offer.id}" style="background-color: var(--primary-color); color: white; padding: 0.5rem 1rem; font-size: 0.875rem;">
+                    ${auth.isAuthenticated() ? 'Start Offer' : 'Login to Start'}
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add event listeners to offer buttons
+    document.querySelectorAll('.offer-start-btn').forEach(button => {
+        button.addEventListener('click', handleOfferStart);
+    });
+}
+
+function handleOfferStart(event) {
+    const offerId = event.target.dataset.offerId;
+    
+    if (!auth.isAuthenticated()) {
+        utils.showNotification('Please login to start offers', 'warning');
+        window.location.href = '/login';
+        return;
+    }
+    
+    // For now, just show a message that integration is coming
+    utils.showNotification('Offerwall integration will be implemented in the next phase!', 'info');
+}
+
+function setupProviderFilter() {
+    document.getElementById('providerFilter').addEventListener('change', function() {
+        const selectedProvider = this.value;
+        const filteredOffers = selectedProvider === 'all' 
+            ? currentOffers 
+            : currentOffers.filter(offer => offer.provider === selectedProvider);
+        
+        displayOffers(filteredOffers);
+    });
+}
+</script>
+{% endblock %}

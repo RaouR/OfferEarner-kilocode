@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - OfferEarner{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+    <h1 style="margin-bottom: 2rem; color: var(--text-primary);">Dashboard</h1>
+    
+    <!-- Stats Cards -->
+    <div id="statsCards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+        <div class="feature-card">
+            <h3 style="color: var(--success-color);">Total Earnings</h3>
+            <p id="totalEarnings" style="font-size: 2rem; font-weight: bold; color: var(--text-primary);">Loading...</p>
+        </div>
+        
+        <div class="feature-card">
+            <h3 style="color: var(--primary-color);">Completed Offers</h3>
+            <p id="completedOffers" style="font-size: 2rem; font-weight: bold; color: var(--text-primary);">Loading...</p>
+        </div>
+        
+        <div class="feature-card">
+            <h3 style="color: var(--warning-color);">Pending Offers</h3>
+            <p id="pendingOffers" style="font-size: 2rem; font-weight: bold; color: var(--text-primary);">Loading...</p>
+        </div>
+        
+        <div class="feature-card">
+            <h3 style="color: var(--secondary-color);">Account Balance</h3>
+            <p id="accountBalance" style="font-size: 2rem; font-weight: bold; color: var(--text-primary);">Loading...</p>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div style="margin-bottom: 3rem;">
+        <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Quick Actions</h2>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="/offers" class="btn" style="background-color: var(--primary-color); color: white;">Browse Offers</a>
+            <button id="payoutBtn" class="btn" style="background-color: var(--success-color); color: white;">Request Payout</button>
+            <button class="btn" style="background-color: var(--secondary-color); color: white;">View Payout History</button>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div>
+        <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Recent Activity</h2>
+        <div id="recentActivity" class="feature-card">
+            <p style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+{% block scripts %}
+<script>
+// Check authentication on dashboard load
+document.addEventListener('DOMContentLoaded', async function() {
+    if (!auth.isAuthenticated()) {
+        window.location.href = '/login';
+        return;
+    }
+    
+    await loadDashboardData();
+});
+
+async function loadDashboardData() {
+    try {
+        const data = await utils.apiCall('/api/dashboard/stats');
+        
+        // Update stats cards
+        document.getElementById('totalEarnings').textContent = utils.formatCurrency(data.total_earnings);
+        document.getElementById('completedOffers').textContent = data.completed_offers;
+        document.getElementById('pendingOffers').textContent = data.pending_offers;
+        document.getElementById('accountBalance').textContent = utils.formatCurrency(data.account_balance);
+        
+        // Update recent activity
+        const recentActivityDiv = document.getElementById('recentActivity');
+        if (data.recent_earnings.length === 0) {
+            recentActivityDiv.innerHTML = `
+                <p style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                    No activity yet. <a href="/offers" style="color: var(--primary-color);">Complete your first offer</a> to get started!
+                </p>
+            `;
+        } else {
+            let activityHtml = '<h4 style="margin-bottom: 1rem; color: var(--text-primary);">Recent Earnings</h4>';
+            data.recent_earnings.slice(0, 5).forEach(earning => {
+                activityHtml += `
+                    <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                        <span style="color: var(--text-primary);">${earning.description}</span>
+                        <span style="color: var(--success-color); font-weight: bold;">${utils.formatCurrency(earning.amount)}</span>
+                    </div>
+                `;
+            });
+            recentActivityDiv.innerHTML = activityHtml;
+        }
+        
+    } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+        // If unauthorized, redirect to login
+        if (error.message.includes('401')) {
+            window.location.href = '/login';
+        }
+    }
+}
+
+// Payout functionality
+document.getElementById('payoutBtn').addEventListener('click', async function() {
+    try {
+        // Get payout info first
+        const payoutInfo = await utils.apiCall('/api/payouts/info');
+        
+        if (!payoutInfo.can_payout) {
+            utils.showNotification(`Minimum payout amount is $${payoutInfo.minimum_payout.toFixed(2)}. Your balance: $${payoutInfo.available_balance.toFixed(2)}`, 'warning');
+            return;
+        }
+        
+        // Show payout dialog
+        const amount = prompt(`Enter payout amount (Min: $${payoutInfo.minimum_payout.toFixed(2)}, Available: $${payoutInfo.available_balance.toFixed(2)}):`);
+        
+        if (!amount) return;
+        
+        const payoutAmount = parseFloat(amount);
+        if (isNaN(payoutAmount) || payoutAmount < payoutInfo.minimum_payout || payoutAmount > payoutInfo.available_balance) {
+            utils.showNotification('Invalid payout amount', 'error');
+            return;
+        }
+        
+        // Confirm payout
+        if (!confirm(`Request payout of $${payoutAmount.toFixed(2)} to ${payoutInfo.paypal_email}? A small processing fee will be deducted.`)) {
+            return;
+        }
+        
+        // Request payout
+        const result = await utils.apiCall('/api/payouts/request', {
+            method: 'POST',
+            body: JSON.stringify({ amount: payoutAmount })
+        });
+        
+        if (result.success) {
+            utils.showNotification(`Payout requested! $${result.payout_details.net_amount.toFixed(2)} will be sent to your PayPal.`, 'success');
+            
+            // Reload dashboard data
+            await loadDashboardData();
+        }
+        
+    } catch (error) {
+        // Error already handled by utils.apiCall
+    }
+});
+</script>
+{% endblock %}
+                Loading recent activity...
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

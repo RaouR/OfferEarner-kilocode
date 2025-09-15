@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'OfferEarner' %></title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="/">OfferEarner</a>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/offers" class="nav-link">Offers</a>
+                <div id="nav-auth-links">
+                    <% if (locals.user) { %>
+                        <a href="/dashboard" class="nav-link">Dashboard</a>
+                        <button id="logout-btn" class="nav-link">Logout</button>
+                    <% } else { %>
+                        <a href="/login" class="nav-link">Login</a>
+                        <a href="/register" class="nav-link">Register</a>
+                    <% } %>
+                </div>
+                <button id="theme-toggle" class="theme-toggle">🌙</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <%- body %>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2025 OfferEarner. Complete offers, earn money!</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <%- include('partials/scripts') %>
+</body>
+</html>
