@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  offerearner:
+    build: .
+    container_name: offerearner-app
+    environment:
+      - NODE_ENV=production
+      - PORT=8001
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - proxy_net
+
+networks:
+  proxy_net:
+    external: true

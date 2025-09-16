@@ -1,6 +1,6 @@
 # OfferEarner - Complete Integration System
 
-A modern TypeScript/Node.js web application for managing offerwall integrations, user earnings, and PayPal payouts.
+A modern TypeScript/Node.js web application for managing offerwall integrations, user earnings, and PayPal payouts. Includes a complete Python/FastAPI version for reference and testing.
 
 ## Features
 
@@ -15,6 +15,7 @@ A modern TypeScript/Node.js web application for managing offerwall integrations,
 
 ## Tech Stack
 
+### Primary Application (Node.js/TypeScript)
 - **Backend**: Node.js, Express.js, TypeScript
 - **Database**: SQLite with Sequelize ORM
 - **Authentication**: JWT with bcrypt password hashing
@@ -23,14 +24,22 @@ A modern TypeScript/Node.js web application for managing offerwall integrations,
 - **Payments**: PayPal REST API integration
 - **Security**: Helmet.js, rate limiting, CORS protection
 
+### Reference Implementation (Python/FastAPI)
+- **Backend**: Python, FastAPI, SQLAlchemy
+- **Database**: SQLite with SQLAlchemy ORM
+- **Authentication**: JWT with bcrypt password hashing
+- **Frontend**: Jinja2 templates
+- **Payments**: PayPal REST API integration
+
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+ (for main application)
+- Python 3.8+ (for reference Python version)
 - npm or yarn
 
-### Installation
+### Installation (Node.js Version)
 
 1. **Clone the repository**
    ```bash
@@ -64,6 +73,18 @@ A modern TypeScript/Node.js web application for managing offerwall integrations,
    npm run dev
    ```
 
+### Installation (Python Version - Reference)
+
+The Python version is located in the [`python-version/`](python-version/) directory and serves as a reference implementation:
+
+```bash
+cd python-version
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python start.py
+```
+
 ### Environment Variables
 
 Create a `.env` file based on `env.example`:
@@ -88,6 +109,30 @@ PAYPAL_MODE=sandbox
 # Lootably Configuration (optional)
 LOOTABLY_API_KEY=your-lootably-api-key
 LOOTABLY_SECRET_KEY=your-lootably-secret-key
+```
+
+## Project Structure
+
+```
+offerearner/
+├── src/                    # TypeScript source code
+│   ├── database/          # Database models and configuration
+│   ├── middleware/        # Express middleware (auth, etc.)
+│   ├── routes/           # API route handlers
+│   ├── types/            # TypeScript type definitions
+│   └── server.ts         # Main application entry point
+├── views/                # EJS templates
+├── public/              # Static assets (CSS, JS)
+├── python-version/       # Python/FastAPI reference implementation
+│   ├── auth.py          # Authentication module
+│   ├── database.py      # Database configuration
+│   ├── models.py        # SQLAlchemy models
+│   ├── templates/       # Jinja2 templates
+│   ├── static/         # Static assets
+│   └── start.py         # FastAPI application entry point
+├── package.json         # Node.js dependencies
+├── requirements.txt     # Python dependencies
+└── .env                 # Environment variables
 ```
 
 ## API Endpoints
@@ -134,105 +179,15 @@ LOOTABLY_SECRET_KEY=your-lootably-secret-key
 - `/dashboard` - User dashboard
 - `/offers` - Browse offers
 
-## Database Schema
-
-### Users
-- Basic user information (username, email, password)
-- PayPal email for payouts
-- Balance and earnings tracking
-- Task completion statistics
-
-### Offers
-- Offer details (title, description, requirements)
-- Provider and category classification
-- Reward amounts (full and user payout)
-- External offer IDs for tracking
-
-### UserOffers
-- User-offer relationships
-- Progress tracking and status
-- Completion timestamps
-- Reward amounts
-
-### Earnings
-- Individual earning records
-- Type classification (task_completion, bonus, referral)
-- Amount and description
-- Timestamps
-
-### Payouts
-- Payout requests and status
-- Payment method and details
-- Transaction tracking
-- Processing timestamps
-
-### OfferCallbacks
-- External callback data storage
-- Provider-specific information
-- Processing status tracking
-
 ## Deployment
 
-### Production Deployment
+### Deployment
 
-1. **Build the application**
-   ```bash
-   npm run build
-   ```
-
-2. **Set production environment**
-   ```bash
-   export NODE_ENV=production
-   ```
-
-3. **Start the server**
-   ```bash
-   npm start
-   ```
-
-### Docker Deployment
-
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY dist ./dist
-COPY public ./public
-COPY views ./views
-
-EXPOSE 8001
-
-CMD ["node", "dist/server.js"]
-```
-
-### Reverse Proxy (Nginx)
-
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-
-    location / {
-        proxy_pass http://localhost:8001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
+For comprehensive deployment instructions covering both Node.js and Python versions, see [`COMPREHENSIVE_DEPLOYMENT_GUIDE.md`](COMPREHENSIVE_DEPLOYMENT_GUIDE.md).
 
 ## Development
 
-### Scripts
+### Scripts (Node.js)
 
 - `npm run dev` - Start development server with auto-reload
 - `npm run build` - Build TypeScript to JavaScript
@@ -241,31 +196,13 @@ server {
 - `npm run lint` - Run ESLint
 - `npm run format` - Format code with Prettier
 
-### Project Structure
-
-```
-src/
-├── database/          # Database models and configuration
-├── middleware/        # Express middleware (auth, etc.)
-├── routes/           # API route handlers
-├── types/            # TypeScript type definitions
-└── server.ts         # Main application entry point
-
-views/                # EJS templates
-├── base.ejs         # Base template
-├── index.ejs        # Homepage
-├── register.ejs     # Registration page
-├── login.ejs        # Login page
-├── dashboard.ejs    # User dashboard
-├── offers.ejs       # Offers page
-└── partials/        # Template partials
-
-public/              # Static assets
-├── css/
-│   └── style.css   # Main stylesheet
-└── js/
-    ├── theme.js    # Theme management
-    └── auth.js     # Authentication helpers
+### Running Python Version
+```bash
+cd python-version
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python start.py
 ```
 
 ## Security Features
